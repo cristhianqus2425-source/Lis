@@ -21,19 +21,20 @@ export const CONFIG = {
 
   // Mensaje principal (aparece letra por letra)
   mensaje:
-    'Lis, hoy es el día de las flores moradas y no encontré mejor excusa para regalarte unas que nunca se marchiten.\n\n' +
+    'Lis, hoy es el día de las flores moradas y no encontré mejor excusa para regalarte una que nunca se marchite.\n\n' +
     'Me alegra muchísimo haberte conocido. Cada rato que compartimos se vuelve uno de mis favoritos, ' +
     'y tu forma de ser hace que todo se sienta más ligero.\n\n' +
     'Por cierto: esta rosa se abrió de verdad; yo solo la pinté de morado y la aceleré un poquito para que la vieras florecer. 🌸',
 
-  // Recuerdos o detalles de ustedes (opcional). Aparecen flotando cerca del ramo.
+  // Recuerdos o detalles de ustedes (opcional). Aparecen flotando cerca de la rosa.
   // Déjalo vacío [] para no mostrar ninguno. Ejemplos:
   //   recuerdos: ['el café de la plaza', 'la vez que nos perdimos en Puno'],
   recuerdos: [],
 
   // Música (opcional): pon un .mp3 en la carpeta assets/audio/ y escribe aquí
   // su nombre exacto, por ejemplo 'cancion.mp3'. Déjalo '' para no usar música.
-  musica: '',
+  // Ahora espera 'euphoria.mp3' (Euphoria, Jungkook). Si el archivo no existe, simplemente no suena.
+  musica: 'euphoria.mp3',
 
   // Volumen de la música (0 a 1)
   volumen: 0.6,

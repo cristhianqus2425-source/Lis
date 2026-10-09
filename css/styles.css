@@ -237,6 +237,8 @@ button { font: inherit; color: inherit; }
   transition: transform .9s cubic-bezier(.2, .8, .2, 1), opacity .9s ease;
 }
 .capullo .chispa { fill: var(--dorado); animation: titilar 2.8s ease-in-out infinite; }
+.capullo .espiral { fill: none; stroke: rgba(230, 204, 255, .55); stroke-width: 1.2; stroke-linecap: round; transition: opacity .6s ease; }
+#intro.abriendo .espiral { opacity: 0; }
 .capullo .c2 { animation-delay: .7s; }
 .capullo .c3 { animation-delay: 1.4s; }
 .capullo .c4 { animation-delay: 2.1s; }

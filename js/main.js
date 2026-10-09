@@ -243,5 +243,5 @@ async function iniciar() {
 iniciar().catch((err) => {
   console.error(err);
   const p = document.querySelector('#carga p');
-  if (p) p.textContent = 'Ups, tu navegador no pudo cargar las flores 🥲 Intenta abrir el link en Chrome o Safari.';
+  if (p) p.textContent = 'Ups, tu navegador no pudo cargar la rosa 🥲 Intenta abrir el link en Chrome o Safari.';
 });

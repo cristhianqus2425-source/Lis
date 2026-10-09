@@ -192,7 +192,7 @@ export class Particulas {
     const n = this.o.cantidades.luciernagas;
     const pos = new Float32Array(n * 3), escala = new Float32Array(n), fase = new Float32Array(n), vida = new Float32Array(n);
     for (let i = 0; i < n; i++) {
-      // Alrededor del ramo, en un anillo amplio
+      // Alrededor de la rosa, en un anillo amplio
       const a = Math.random() * Math.PI * 2, r = 1.2 + Math.random() * 2.4;
       pos.set([Math.cos(a) * r, (Math.random() - 0.3) * 3.6, Math.sin(a) * r * 0.8], i * 3);
       escala[i] = 0.6 + Math.random() * 0.8;

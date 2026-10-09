@@ -27,7 +27,7 @@ export class Interfaz {
     this.cicloRecuerdos = 0;  // se incrementa para cancelar el ciclo anterior
 
     // Textos personalizados
-    document.title = `Flores moradas para ${config.para} 💜`;
+    document.title = `Una rosa morada para ${config.para} 💜`;
     this.el.introNombre.textContent = config.para;
     this.el.titulo.textContent = config.titulo;
     this.el.firma.textContent = `— ${config.firma}`;
@@ -203,8 +203,8 @@ export class Interfaz {
   // ---------- recuerdos flotantes ----------
 
   /**
-   * Muestra los recuerdos uno a uno, flotando cerca del ramo, en ciclo.
-   * @param {() => {x:number,y:number}[]} obtenerPosiciones  posiciones en pantalla (px) junto al ramo
+   * Muestra los recuerdos uno a uno, flotando cerca de la rosa, en ciclo.
+   * @param {() => {x:number,y:number}[]} obtenerPosiciones  posiciones en pantalla (px) junto a la rosa
    */
   async mostrarRecuerdos(obtenerPosiciones) {
     const lista = (this.config.recuerdos || []).filter((r) => r && r.trim());

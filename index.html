@@ -5,15 +5,15 @@
   <!-- Sin zoom accidental en móvil y respetando el notch (viewport-fit=cover) -->
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="theme-color" content="#2a0f3d" />
-  <title>Flores moradas para Lis 💜</title>
-  <meta name="description" content="Un pequeño ramo de flores moradas, hecho a mano para ti." />
+  <title>Una rosa morada para Lis 💜</title>
+  <meta name="description" content="Una rosa morada que florece solo para ti." />
 
   <!-- Vista previa al compartir (WhatsApp, Telegram, etc.).
        og:image y og:url deben ser URLs ABSOLUTAS: si tu repositorio tiene otro
        nombre o usuario, cámbialas aquí. -->
   <meta property="og:type" content="website" />
-  <meta property="og:title" content="Flores moradas para Lis 💜" />
-  <meta property="og:description" content="Toca para abrir tu flor." />
+  <meta property="og:title" content="Una rosa morada para Lis 💜" />
+  <meta property="og:description" content="Toca para verla florecer." />
   <meta property="og:url" content="https://cristhianqus2425-source.github.io/Lis/" />
   <meta property="og:image" content="https://cristhianqus2425-source.github.io/Lis/preview.png" />
   <meta property="og:image:width" content="1200" />
@@ -53,7 +53,7 @@
   <!-- 0. Pantalla de carga: un pétalo girando -->
   <div id="carga" class="pantalla" role="status" aria-live="polite">
     <div class="petalo-girando" aria-hidden="true"><span></span><span></span></div>
-    <p>preparando tus flores…</p>
+    <p>preparando tu rosa…</p>
   </div>
 
   <!-- 1. Pantalla de inicio: capullo que late -->
@@ -81,12 +81,16 @@
         </linearGradient>
       </defs>
       <circle class="brillo" cx="60" cy="66" r="58" fill="url(#g-brillo)" />
-      <path class="tallo" d="M60 168 C 58 140, 63 122, 60 100" />
-      <path class="hoja" d="M60 140 C 44 136, 32 122, 30 108 C 44 112, 56 124, 60 140 Z" fill="url(#g-hoja)" />
+      <path class="tallo" d="M60 168 C 58 144, 63 124, 60 104" />
+      <path class="hoja" d="M60 142 C 44 138, 32 124, 30 110 C 44 114, 56 126, 60 142 Z" fill="url(#g-hoja)" />
+      <!-- Capullo de rosa: pétalos envolventes y la espiral del centro -->
       <g class="petalos">
-        <path class="p-centro" d="M60 102 C 40 99, 36 62, 60 28 C 84 62, 80 99, 60 102 Z" fill="url(#g-centro)" />
-        <path class="p-izq" d="M60 102 C 41 102, 29 72, 43 40 C 52 54, 58 78, 60 102 Z" fill="url(#g-lado)" />
-        <path class="p-der" d="M60 102 C 79 102, 91 72, 77 40 C 68 54, 62 78, 60 102 Z" fill="url(#g-lado)" />
+        <path class="p-centro" d="M60 100 C 42 98, 38 70, 46 54 C 50 44, 56 40, 60 38 C 66 40, 72 45, 75 54 C 82 70, 78 98, 60 100 Z" fill="url(#g-centro)" />
+        <path class="espiral" d="M52 54 C 55 46, 66 45, 68 53 C 70 60, 60 63, 57 57 C 55 53, 60 50, 62 53" />
+        <path class="p-izq" d="M60 101 C 44 101, 33 86, 36 68 C 38 58, 44 52, 50 50 C 46 62, 48 80, 60 101 Z" fill="url(#g-lado)" />
+        <path class="p-der" d="M60 101 C 76 101, 87 86, 84 68 C 82 58, 76 52, 70 50 C 74 62, 72 80, 60 101 Z" fill="url(#g-lado)" />
+        <!-- Sépalos verdes en la base -->
+        <path class="sepalo" d="M60 104 C 52 104, 44 98, 40 88 C 48 94, 54 96, 60 98 C 66 96, 72 94, 80 88 C 76 98, 68 104, 60 104 Z" fill="url(#g-hoja)" />
       </g>
       <circle class="chispa c1" cx="22" cy="40" r="1.6" />
       <circle class="chispa c2" cx="100" cy="30" r="1.3" />
@@ -121,7 +125,7 @@
   </button>
 
   <!-- Título solo para generar la imagen de vista previa (?captura) -->
-  <div id="titulo-captura" aria-hidden="true">Flores moradas<br />para Lis 💜</div>
+  <div id="titulo-captura" aria-hidden="true">Una rosa morada<br />para Lis 💜</div>
 
   <!-- Si el navegador es muy antiguo y no carga los módulos, avisar en vez de girar para siempre -->
   <script>

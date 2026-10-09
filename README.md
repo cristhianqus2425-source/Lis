@@ -1,4 +1,4 @@
-# 💜 Flores moradas para Lis
+# 💜 Una rosa morada para Lis
 
 Página web estática donde una rosa morada real se abre ante sus ojos (video time-lapse)
 en medio de una noche violeta con estrellas, bokeh, pétalos que caen y luciérnagas.
@@ -18,7 +18,7 @@ guarda y sube los cambios.
 | `firma`      | Tu firma al final: "— Cristhian"                                         |
 | `titulo`     | Título de la tarjeta                                                     |
 | `mensaje`    | El mensaje que se escribe letra por letra. Usa `\n` para saltos de línea  |
-| `recuerdos`  | Lista de frases que flotan junto al ramo. `[]` para no mostrar ninguna    |
+| `recuerdos`  | Lista de frases que flotan junto a la rosa. `[]` para no mostrar ninguna  |
 | `musica`     | Nombre del `.mp3` dentro de `assets/audio/`. `''` para no usar música     |
 | `volumen`    | Volumen de la música, de `0` a `1`                                         |
 
@@ -41,7 +41,7 @@ recuerdos: ['el café de la plaza', 'la vez que nos perdimos en Puno'],
 WhatsApp no ejecuta JavaScript, así que el título y la imagen de la vista previa están
 escritos directamente en `index.html` (etiquetas `og:`). Si cambias el nombre, edita también:
 
-- `<title>` y `og:title` en `index.html`
+- `<title>`, `og:title` y `#titulo-captura` en `index.html`
 - `og:url` y `og:image`: deben ser la URL **completa** de tu página. Si tu repositorio o
   usuario se llaman distinto, cámbialos ahí.
 

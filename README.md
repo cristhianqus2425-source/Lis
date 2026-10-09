@@ -127,5 +127,4 @@ y pausa todo cuando la pestaña no está visible.
 Video original de la rosa: ["Time-lapse of opening red rose isolated on black background"](https://commons.wikimedia.org/wiki/File:Time-lapse_of_opening_red_rose_isolated_on_black_background.Blooming_red_roses_flower_buds.webm)
 de **Alex Tr**, en Wikimedia Commons, bajo licencia [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/).
 Cambios: recortado, con margen negro, color pasado de rosado a morado y reproducido más lento.
-La licencia pide dar crédito: por eso aparece una línea pequeña al pie de la tarjeta.
-Si la quitas, deja el crédito visible en otro lugar de la página.
+El crédito está en este README y como comentario en `index.html`.

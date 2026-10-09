@@ -27,7 +27,7 @@ export class Interfaz {
     this.cicloRecuerdos = 0;  // se incrementa para cancelar el ciclo anterior
 
     // Textos personalizados
-    document.title = `Una rosa morada para ${config.para} 💜`;
+    document.title = `${config.para} 💜`;
     this.el.introNombre.textContent = config.para;
     this.el.titulo.textContent = config.titulo;
     this.el.firma.textContent = `— ${config.firma}`;

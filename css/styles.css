@@ -502,13 +502,3 @@ body.captura #titulo-captura {
   #acabado::after { animation: none; }
   .recuerdo { transition: opacity 1.2s ease; translate: none !important; }
 }
-
-/* Crédito del video (requerido por la licencia), muy discreto */
-#credito {
-  margin: .6rem 0 0;
-  text-align: center;
-  font-size: .62rem;
-  letter-spacing: .03em;
-  color: rgba(230, 204, 255, .45);
-}
-#credito a { color: inherit; }

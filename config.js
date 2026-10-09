@@ -31,10 +31,10 @@ export const CONFIG = {
   //   recuerdos: ['el café de la plaza', 'la vez que nos perdimos en Puno'],
   recuerdos: [],
 
-  // Música (opcional): pon un .mp3 en la carpeta assets/audio/ y escribe aquí
+  // Música (opcional): pon un .mp3 o .m4a en la carpeta assets/audio/ y escribe aquí
   // su nombre exacto, por ejemplo 'cancion.mp3'. Déjalo '' para no usar música.
-  // Ahora espera 'euphoria.mp3' (Euphoria, Jungkook). Si el archivo no existe, simplemente no suena.
-  musica: 'euphoria.mp3',
+  // Euphoria (Jungkook). Formatos que funcionan en todos los celulares: .mp3 o .m4a
+  musica: 'euphoria.m4a',
 
   // Volumen de la música (0 a 1)
   volumen: 0.6,

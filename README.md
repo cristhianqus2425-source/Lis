@@ -19,7 +19,7 @@ guarda y sube los cambios.
 | `titulo`     | Título de la tarjeta                                                     |
 | `mensaje`    | El mensaje que se escribe letra por letra. Usa `\n` para saltos de línea  |
 | `recuerdos`  | Lista de frases que flotan junto a la rosa. `[]` para no mostrar ninguna  |
-| `musica`     | Nombre del `.mp3` dentro de `assets/audio/`. `''` para no usar música     |
+| `musica`     | Nombre del `.mp3` o `.m4a` dentro de `assets/audio/`. `''` para no usar música |
 | `volumen`    | Volumen de la música, de `0` a `1`                                         |
 
 Ejemplo de recuerdos:
@@ -30,7 +30,7 @@ recuerdos: ['el café de la plaza', 'la vez que nos perdimos en Puno'],
 
 ### Agregar música
 
-1. Copia tu canción a `assets/audio/` (por ejemplo `assets/audio/cancion.mp3`).
+1. Copia tu canción a `assets/audio/` (por ejemplo `assets/audio/cancion.mp3`; también sirve `.m4a`).
    Mejor si pesa menos de ~5 MB para que cargue rápido en el celular.
 2. En `config.js` pon `musica: 'cancion.mp3',`
 3. La música empieza cuando ella toca "toca para abrir" (los navegadores no dejan

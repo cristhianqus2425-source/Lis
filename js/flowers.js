@@ -49,7 +49,7 @@ export function agregarBrilloPetalo(material, colorBorde = '#c99bff', fuerza = 0
         '#include <emissivemap_fragment>',
         `#include <emissivemap_fragment>
         // Fresnel: más brillo cuanto más de canto vemos la superficie
-        float fresnel = pow(1.0 - abs(dot(normalize(vViewPosition), normal)), 2.2);
+        float fresnel = pow(clamp(1.0 - abs(dot(normalize(vViewPosition), normal)), 0.0, 1.0), 2.2);
         totalEmissiveRadiance += uColorBorde * fresnel * uFuerzaBorde;
         // Translucidez falsa: el pétalo deja "pasar" un poco de su propio color
         totalEmissiveRadiance += diffuseColor.rgb * uTranslucidez;`
@@ -57,6 +57,126 @@ export function agregarBrilloPetalo(material, colorBorde = '#c99bff', fuerza = 0
   };
   material.customProgramCacheKey = () => `petalo-${colorBorde}-${fuerza}-${translucidez}`;
   return material;
+}
+
+/**
+ * Material "de verdad" para los pétalos:
+ *  - MeshPhysicalMaterial con sheen (aspecto aterciopelado, como un pétalo real)
+ *  - venas finas que nacen en la base
+ *  - motitas oscuras cerca del centro (típicas del lirio), opcional
+ *  - gotitas de rocío que destellan con el tiempo (las recoge el bloom)
+ *  - brillo de borde (fresnel) y falsa translucidez
+ * La geometría debe tener el atributo `aUvPetalo` (copia de uv).
+ */
+export function crearMaterialPetalo({ tiempo, manchas = false, venas = 9, rocio = 0.012, colorBorde = '#c99bff', sheen = '#f3dcff' } = {}) {
+  const material = new THREE.MeshPhysicalMaterial({
+    vertexColors: true,
+    side: THREE.DoubleSide,
+    roughness: 0.48,
+    metalness: 0,
+    sheen: 1,
+    sheenRoughness: 0.4,
+    sheenColor: new THREE.Color(sheen),
+    specularIntensity: 0.6,
+  });
+  material.onBeforeCompile = (shader) => {
+    shader.uniforms.uTiempo = tiempo;
+    shader.uniforms.uColorBorde = { value: new THREE.Color(colorBorde) };
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\nattribute vec2 aUvPetalo;\nvarying vec2 vUvP;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvUvP = aUvPetalo;');
+    shader.fragmentShader = shader.fragmentShader
+      .replace(
+        '#include <common>',
+        `#include <common>
+        uniform float uTiempo;
+        uniform vec3 uColorBorde;
+        varying vec2 vUvP;
+        float hashP(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }`
+      )
+      .replace(
+        '#include <color_fragment>',
+        `#include <color_fragment>
+        float uP = vUvP.x * 2.0 - 1.0;
+        float vP = vUvP.y;
+        // Venas: líneas finas a lo largo del pétalo, más marcadas en la base
+        float lineas = abs(fract(uP * ${(venas / 2).toFixed(1)} + 0.5) - 0.5) * 2.0;
+        float vena = (1.0 - smoothstep(0.0, 0.22, lineas)) * (1.0 - vP * 0.75);
+        diffuseColor.rgb *= 1.0 - vena * 0.22;
+        // Nervio central un poco más claro
+        diffuseColor.rgb *= 1.0 + (1.0 - smoothstep(0.0, 0.06, abs(uP))) * 0.12 * (1.0 - vP);
+        ${manchas ? `
+        // Motitas del lirio
+        vec2 celda = vUvP * vec2(13.0, 24.0);
+        vec2 idC = floor(celda);
+        float azarC = hashP(idC);
+        float mota = step(0.78, azarC) * (1.0 - smoothstep(0.14, 0.34, length(fract(celda) - 0.5)));
+        mota *= (1.0 - smoothstep(0.12, 0.5, vP)) * step(0.06, vP) * (1.0 - smoothstep(0.4, 0.8, abs(uP)));
+        diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.16, 0.03, 0.22), mota * 0.9);` : ''}`
+      )
+      .replace(
+        '#include <emissivemap_fragment>',
+        `#include <emissivemap_fragment>
+        float fresnel = pow(clamp(1.0 - abs(dot(normalize(vViewPosition), normal)), 0.0, 1.0), 2.4);
+        totalEmissiveRadiance += uColorBorde * fresnel * 0.75;
+        totalEmissiveRadiance += diffuseColor.rgb * 0.14;
+        // Gotitas de rocío que titilan
+        vec2 celdaR = vUvP * vec2(22.0, 36.0);
+        vec2 idR = floor(celdaR);
+        float azarR = hashP(idR + 7.0);
+        float gota = step(1.0 - ${rocio.toFixed(3)}, azarR) * (1.0 - smoothstep(0.0, 0.22, length(fract(celdaR) - 0.5)));
+        float destello = pow(0.5 + 0.5 * sin(uTiempo * (1.5 + azarR * 3.0) + azarR * 60.0), 6.0);
+        totalEmissiveRadiance += vec3(1.0, 0.95, 1.0) * gota * (0.6 + destello * 3.5);`
+      );
+  };
+  material.customProgramCacheKey = () => `petaloFisico-${manchas}-${venas}-${rocio}-${colorBorde}`;
+  return material;
+}
+
+/**
+ * Papel de envoltura del ramo: un cono abierto adelante, con borde ondulado
+ * y arrugas suaves. `desde`/`hasta` son ángulos (0 = frente).
+ */
+function crearGeometriaPapel({ desde, hasta, alto, radioTope, colores, ondas = 5, fase = 0, segT = 64, segY = 22 }) {
+  const posiciones = [], colorArr = [], uvs = [], indices = [];
+  const cBajo = new THREE.Color(colores[0]), cAlto = new THREE.Color(colores[1]);
+  const c = new THREE.Color();
+  const yBase = -0.62; // el papel termina justo bajo el lazo; abajo se ven los tallos
+  for (let j = 0; j <= segY; j++) {
+    const s = j / segY;
+    for (let i = 0; i <= segT; i++) {
+      const u = i / segT;
+      const th = desde + (hasta - desde) * u;
+      // Borde superior ondulado (como papel plegado)
+      const tope = alto + 0.11 * Math.sin(ondas * th + fase) + 0.04 * Math.sin(13 * th + fase * 2);
+      const y = yBase + (tope - yBase) * s;
+      const sobre = Math.max(0, y);
+      let r = y < 0 ? 0.22 + 0.05 * -y : 0.22 + (radioTope - 0.22) * Math.pow(sobre / alto, 1.3);
+      // Arrugas y pliegues verticales
+      r += (0.03 * Math.sin(th * 19 + y * 3 + fase) + 0.018 * Math.sin(th * 41 - y * 5)) * Math.min(1, sobre / 0.4 + 0.15);
+      // Los extremos del papel se abren un poquito hacia afuera
+      const borde = Math.min(u, 1 - u);
+      r += (1 - Math.min(1, borde / 0.08)) * 0.05 * Math.min(1, sobre);
+      posiciones.push(Math.sin(th) * r, y, Math.cos(th) * r);
+      c.lerpColors(cBajo, cAlto, Math.pow(s, 0.8));
+      colorArr.push(c.r, c.g, c.b);
+      uvs.push(u, s);
+    }
+  }
+  const fila = segT + 1;
+  for (let j = 0; j < segY; j++) {
+    for (let i = 0; i < segT; i++) {
+      const a = j * fila + i, b = a + 1, d = a + fila, e = d + 1;
+      indices.push(a, d, b, b, d, e);
+    }
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(posiciones, 3));
+  geo.setAttribute('color', new THREE.Float32BufferAttribute(colorArr, 3));
+  geo.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+  geo.setIndex(indices);
+  geo.computeVertexNormals();
+  return geo;
 }
 
 /**
@@ -113,6 +233,7 @@ function crearGeometriaPetalo(o) {
   }
 
   geo.setAttribute('color', new THREE.BufferAttribute(colores, 3));
+  geo.setAttribute('aUvPetalo', geo.attributes.uv.clone()); // para venas, motas y rocío
   geo.computeVertexNormals();
 
   // Normales de la forma abierta, para que la luz sea correcta durante el morph
@@ -230,19 +351,19 @@ export class Ramo {
     this.activo = false;                      // ¿empezó el florecimiento?
     this.promesas = [];                       // { t, resolver } para esperar momentos del timeline
     this.azar = crearAzar(2026);
+    this.tiempoShader = { value: 0 };         // reloj compartido por los shaders (rocío)
 
     this.#crearMateriales();
     this.#crearFlores();
     this.#crearInstancias();
     this.#crearLazo();
+    this.#crearPapel();
     this.reiniciar();
   }
 
   #crearMateriales() {
-    this.matPetalo = agregarBrilloPetalo(
-      new THREE.MeshStandardMaterial({ vertexColors: true, side: THREE.DoubleSide, roughness: 0.55, metalness: 0.0 }),
-      '#c99bff', 0.85, 0.16
-    );
+    this.matTulipan = crearMaterialPetalo({ tiempo: this.tiempoShader, venas: 11, rocio: 0.014 });
+    this.matLirio = crearMaterialPetalo({ tiempo: this.tiempoShader, manchas: true, venas: 7, rocio: 0.01, colorBorde: '#e2bcff' });
     this.matTallo = new THREE.MeshStandardMaterial({ color: '#3f7a46', roughness: 0.7 });
     this.matHoja = agregarBrilloPetalo(
       new THREE.MeshStandardMaterial({ vertexColors: true, side: THREE.DoubleSide, roughness: 0.6 }),
@@ -254,15 +375,25 @@ export class Ramo {
       new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.6 }),
       '#d6a8ff', 0.6, 0.12
     );
-    this.matLazo = new THREE.MeshStandardMaterial({
-      color: '#f7dc96', metalness: 0.35, roughness: 0.3, emissive: '#8a6420', emissiveIntensity: 0.45, side: THREE.DoubleSide,
+    // Cinta de satén dorado: brillo suave + reflejos del entorno
+    this.matLazo = new THREE.MeshPhysicalMaterial({
+      color: '#f2cf86', metalness: 0.25, roughness: 0.26, sheen: 1, sheenColor: new THREE.Color('#fff2cc'), sheenRoughness: 0.3,
+      clearcoat: 0.5, clearcoatRoughness: 0.2, emissive: '#6b4a14', emissiveIntensity: 0.3, side: THREE.DoubleSide,
+    });
+    // Papel de envoltura: capa interior color ciruela y capa exterior tipo organza translúcida
+    this.matPapelInterior = new THREE.MeshPhysicalMaterial({
+      vertexColors: true, side: THREE.DoubleSide, roughness: 0.75, sheen: 0.6, sheenColor: new THREE.Color('#c9a0ff'),
+    });
+    this.matPapelExterior = new THREE.MeshPhysicalMaterial({
+      vertexColors: true, side: THREE.DoubleSide, roughness: 0.4, sheen: 1, sheenColor: new THREE.Color('#ffffff'),
+      transparent: true, opacity: 0.62, depthWrite: false, emissive: '#2a0f3d', emissiveIntensity: 0.1,
     });
   }
 
   /** Distribuye las cabezas de las flores en una cúpula (espiral de Fibonacci). */
   #crearFlores() {
     const azar = this.azar;
-    const N = this.calidad === 'baja' ? 17 : 22;
+    const N = this.calidad === 'baja' ? 20 : 27;
     const anguloDorado = Math.PI * (3 - Math.sqrt(5));
     const segTubo = this.calidad === 'baja' ? 16 : 28;
 
@@ -275,6 +406,7 @@ export class Ramo {
       let tipo = 'tulipan';
       if (i % 4 === 1) tipo = 'lirio';
       else if (polar > 0.5 && i % 3 === 0) tipo = 'lavanda';
+      else if (polar > 0.35 && i % 5 === 3) tipo = 'nube'; // flor de nube (gypsophila) de relleno
 
       const dir = new THREE.Vector3(
         Math.sin(polar) * Math.cos(azimut),
@@ -298,7 +430,7 @@ export class Ramo {
       this.grupo.add(grupoFlor);
 
       // Tallo (TubeGeometry sobre la curva Catmull-Rom)
-      const radio = tipo === 'lavanda' ? 0.013 : 0.021;
+      const radio = tipo === 'lavanda' || tipo === 'nube' ? 0.012 : 0.021;
       const tallo = new THREE.Mesh(new THREE.TubeGeometry(curva, segTubo, radio, 6, false), this.matTallo);
       grupoFlor.add(tallo);
 
@@ -307,7 +439,7 @@ export class Ramo {
       cabeza.position.copy(curva.getPointAt(1));
       cabeza.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), curva.getTangentAt(1));
       cabeza.rotateY(azar() * Math.PI * 2);
-      const escala = tipo === 'lavanda' ? 1 : 0.85 + azar() * 0.3;
+      const escala = tipo === 'lavanda' || tipo === 'nube' ? 1 : 0.85 + azar() * 0.3;
       cabeza.scale.setScalar(escala);
       grupoFlor.add(cabeza);
 
@@ -322,6 +454,7 @@ export class Ramo {
       };
 
       if (tipo === 'lavanda') this.#armarLavanda(flor);
+      else if (tipo === 'nube') this.#armarNube(flor);
       else this.#armarFlor(flor);
       this.#armarHojas(flor);
       this.flores.push(flor);
@@ -329,7 +462,7 @@ export class Ramo {
 
     // Orden del florecimiento: primero el centro, luego hacia afuera (cascada)
     this.flores.forEach((f, i) => {
-      f.retraso = i * 0.13 + this.azar() * 0.1;
+      f.retraso = i * (3.0 / this.flores.length) + this.azar() * 0.1;
     });
   }
 
@@ -389,8 +522,23 @@ export class Ramo {
     }
   }
 
+  /** Flor de nube: un pequeño domo de florcitas blancas-lila. */
+  #armarNube(flor) {
+    const n = this.calidad === 'baja' ? 16 : 26;
+    for (let k = 0; k < n; k++) {
+      const boton = new THREE.Object3D();
+      const a = this.azar() * Math.PI * 2, p = Math.sqrt(this.azar()) * 1.2;
+      const r = 0.2;
+      boton.position.set(Math.sin(p) * Math.cos(a) * r, Math.cos(p) * r * 0.7 - 0.02, Math.sin(p) * Math.sin(a) * r);
+      boton.scale.set(0.7, 0.55, 0.7);
+      flor.cabeza.add(boton);
+      const color = new THREE.Color().setHSL(0.78 + (this.azar() - 0.5) * 0.05, 0.6, 0.86 + this.azar() * 0.1);
+      flor.botones.push({ objeto: boton, nivel: this.azar(), escalaBase: 0.55 + this.azar() * 0.35, color });
+    }
+  }
+
   #armarHojas(flor) {
-    const cantidad = flor.tipo === 'lavanda' ? 0 : flor.tipo === 'tulipan' ? 2 : 1;
+    const cantidad = flor.tipo === 'lavanda' || flor.tipo === 'nube' ? 0 : flor.tipo === 'tulipan' ? 2 : 1;
     for (let k = 0; k < cantidad; k++) {
       const t = 0.42 + k * 0.12 + this.azar() * 0.05;
       const hoja = new THREE.Object3D();
@@ -422,8 +570,8 @@ export class Ramo {
       return m;
     };
 
-    this.instTulipan = crear(this.geos.tulipan, this.matPetalo, contar((f) => (f.tipo === 'tulipan' ? f.petalos.length : 0)));
-    this.instLirio = crear(this.geos.lirio, this.matPetalo, contar((f) => (f.tipo === 'lirio' ? f.petalos.length : 0)));
+    this.instTulipan = crear(this.geos.tulipan, this.matTulipan, contar((f) => (f.tipo === 'tulipan' ? f.petalos.length : 0)));
+    this.instLirio = crear(this.geos.lirio, this.matLirio, contar((f) => (f.tipo === 'lirio' ? f.petalos.length : 0)));
     this.instHoja = crear(crearGeometriaHoja(), this.matHoja, contar((f) => f.hojas.length));
     const nEstambres = contar((f) => f.estambres.length);
     this.instEstambre = crear(new THREE.CylinderGeometry(0.006, 0.008, 0.48, 5, 1).translate(0, 0.24, 0), this.matEstambre, nEstambres);
@@ -457,11 +605,11 @@ export class Ramo {
   /** Lazo dorado: banda alrededor de los tallos, nudo (TubeGeometry), dos lazadas y dos colas. */
   #crearLazo() {
     const lazo = new THREE.Group();
-    const banda = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.165, 0.2, 40, 1, true), this.matLazo);
+    const banda = new THREE.Mesh(new THREE.CylinderGeometry(0.245, 0.24, 0.2, 40, 1, true), this.matLazo);
     lazo.add(banda);
 
     const frente = new THREE.Group();
-    frente.position.set(0, 0, 0.18);
+    frente.position.set(0, 0, 0.25);
     lazo.add(frente);
 
     // Nudo: un pequeño anillo hecho con TubeGeometry
@@ -503,6 +651,24 @@ export class Ramo {
     this.grupo.add(lazo);
   }
 
+  /** Papel de envoltura en dos capas, abierto hacia el frente. */
+  #crearPapel() {
+    const papel = new THREE.Group();
+    const seg = this.calidad === 'baja' ? 40 : 64;
+    const interior = new THREE.Mesh(crearGeometriaPapel({
+      desde: 0.32, hasta: Math.PI * 2 - 0.32, alto: 0.95, radioTope: 1.3,
+      colores: ['#2a0f3d', '#6a3399'], ondas: 6, fase: 0.6, segT: seg,
+    }), this.matPapelInterior);
+    const exterior = new THREE.Mesh(crearGeometriaPapel({
+      desde: 0.62, hasta: Math.PI * 2 - 0.62, alto: 1.22, radioTope: 1.62,
+      colores: ['#7f52b8', '#d9c2f4'], ondas: 5, fase: 2.1, segT: seg,
+    }), this.matPapelExterior);
+    exterior.renderOrder = 2;
+    papel.add(interior, exterior);
+    this.papel = papel;
+    this.grupo.add(papel);
+  }
+
   /** Agrega el ramo y sus instancias a la escena. */
   agregarA(escena) {
     escena.add(this.grupo);
@@ -526,6 +692,11 @@ export class Ramo {
   /** Promesa que se resuelve cuando el timeline del florecimiento llega a `segundos`. */
   esperarHasta(segundos) {
     return new Promise((resolver) => this.promesas.push({ t: segundos, resolver }));
+  }
+
+  /** Avance del florecimiento entre 0 y 1. */
+  get progreso() {
+    return clamp01(this.tiempo / this.duracion);
   }
 
   /** Duración aproximada del florecimiento completo (s). */
@@ -553,7 +724,10 @@ export class Ramo {
     this.grupo.position.y = -0.65 - (1 - subida) * 0.8;
     this.grupo.rotation.z = Math.sin(t * 0.5) * 0.015 * suavidad;
     this.grupo.rotation.x = Math.sin(t * 0.37 + 1) * 0.01 * suavidad;
-    this.lazo.scale.setScalar(Math.max(0.001, easeOutBack(clamp01((T - 0.6) / 0.9))));
+    this.lazo.scale.setScalar(Math.max(0.001, easeOutBack(clamp01((T - 0.9) / 0.9))));
+    const papel = easeOutCubic(clamp01((T - 0.15) / 1.5));
+    this.papel.scale.set(Math.max(0.001, papel), Math.max(0.001, papel), Math.max(0.001, papel));
+    this.tiempoShader.value = t;
 
     for (const f of this.flores) {
       // 1) Crecimiento del tallo (desde el nudo hacia afuera)

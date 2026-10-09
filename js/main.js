@@ -8,10 +8,13 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
 import { CONFIG } from '../config.js';
 import { Ramo, easeInOutCubic } from './flowers.js';
 import { Particulas } from './particles.js';
+import { Ambiente } from './ambiente.js';
 import { Interfaz } from './ui.js';
 
 // ---------- entorno y calidad ----------
@@ -20,7 +23,7 @@ const modoCaptura = parametros.has('captura');
 const movimientoReducido = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const esMovil = matchMedia('(pointer: coarse)').matches || Math.min(innerWidth, innerHeight) < 600;
 const gamaBaja = (navigator.hardwareConcurrency || 4) <= 4 || (navigator.deviceMemory || 4) <= 2;
-const mqTarjetaLateral = matchMedia('(min-aspect-ratio: 1/1) and (min-width: 700px)');
+const mqTarjetaLateral = matchMedia('(min-aspect-ratio: 6/5) and (min-width: 700px)');
 
 const calidad = {
   pixelRatio: Math.min(window.devicePixelRatio || 1, esMovil && gamaBaja ? 1.5 : 2),
@@ -45,7 +48,7 @@ const renderer = new THREE.WebGLRenderer({
 renderer.setPixelRatio(calidad.pixelRatio);
 renderer.setSize(innerWidth, innerHeight, false);
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.05;
+renderer.toneMappingExposure = 1.04;
 
 const escena = new THREE.Scene();
 escena.background = crearFondoDegradado();
@@ -75,8 +78,17 @@ function crearFondoDegradado() {
 // ---------- luces ----------
 // Las luces principales viajan en un "rig" que gira con la cámara, así el
 // brillo dorado y el contraluz lila siempre se ven desde donde miramos.
-escena.add(new THREE.AmbientLight('#8f6fb8', 0.35));
-escena.add(new THREE.HemisphereLight('#dcbcff', '#1a0b29', 1.0));
+escena.add(new THREE.AmbientLight('#8f6fb8', 0.25));
+escena.add(new THREE.HemisphereLight('#dcbcff', '#1a0b29', 0.75));
+
+// Iluminación de entorno (IBL): da reflejos y volumen reales al satén, al papel
+// y al terciopelo de los pétalos. Se genera en memoria, sin descargar imágenes.
+{
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  escena.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+  escena.environmentIntensity = 0.32;
+  pmrem.dispose();
+}
 
 const rigLuces = new THREE.Group();
 escena.add(rigLuces);
@@ -97,8 +109,50 @@ ramo.agregarA(escena);
 const particulas = new Particulas({ cantidades, pixelRatio: calidad.pixelRatio, movimientoReducido });
 particulas.agregarA(escena);
 
+const ambiente = new Ambiente({ esMovil, gamaBaja, pixelRatio: calidad.pixelRatio, movimientoReducido });
+ambiente.agregarA(escena);
+
 // ---------- postprocesado (bloom suave) ----------
-let compositor = null, bloom = null;
+let compositor = null, bloom = null, acabado = null;
+
+const ShaderAcabado = {
+  uniforms: {
+    tDiffuse: { value: null },
+    uTiempo: { value: 0 },
+    uRes: { value: new THREE.Vector2(1, 1) },
+    uGrano: { value: esMovil ? 0.035 : 0.045 },
+    uAberracion: { value: 0.0022 },
+  },
+  vertexShader: /* glsl */ `
+    varying vec2 vUv;
+    void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }
+  `,
+  fragmentShader: /* glsl */ `
+    uniform sampler2D tDiffuse;
+    uniform float uTiempo;
+    uniform vec2 uRes;
+    uniform float uGrano;
+    uniform float uAberracion;
+    varying vec2 vUv;
+    float hash(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
+    void main() {
+      vec2 d = vUv - 0.5;
+      float r = length(d);
+      vec2 off = d * uAberracion * r * 2.0;
+      vec3 c = vec3(texture2D(tDiffuse, vUv - off).r, texture2D(tDiffuse, vUv).g, texture2D(tDiffuse, vUv + off).b);
+      float l = dot(c, vec3(0.299, 0.587, 0.114));
+      // Sombras hacia el violeta, luces cálidas doradas
+      c = mix(c, c * vec3(1.03, 0.94, 1.12), 1.0 - l);
+      c = mix(c, c * vec3(1.07, 1.02, 0.93), smoothstep(0.5, 1.0, l));
+      c += vec3(0.018, 0.0, 0.03) * (1.0 - l);
+      // Viñeta suave
+      c *= mix(0.62, 1.0, 1.0 - smoothstep(0.3, 0.85, r));
+      // Grano de película
+      c += (hash(vUv * uRes + fract(uTiempo * 7.0) * 100.0) - 0.5) * uGrano;
+      gl_FragColor = vec4(c, 1.0);
+    }
+  `,
+};
 function crearCompositor() {
   const objetivoRender = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: esMovil ? 0 : 4 });
   compositor = new EffectComposer(renderer, objetivoRender);
@@ -107,9 +161,15 @@ function crearCompositor() {
   bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.5, 0.5, 0.78);
   compositor.addPass(bloom);
   compositor.addPass(new OutputPass());
+  // Acabado de cine: gradación de color, viñeta, aberración cromática leve y grano
+  acabado = new ShaderPass(ShaderAcabado);
+  acabado.uniforms.uRes.value.set(innerWidth * calidad.pixelRatio, innerHeight * calidad.pixelRatio);
+  compositor.addPass(acabado);
+  document.body.classList.remove('sin-post');
   compositor.setSize(innerWidth, innerHeight);
 }
 if (calidad.bloom) crearCompositor();
+else document.body.classList.add('sin-post');
 
 // ---------- controles ----------
 const controles = new OrbitControls(camara, canvas);
@@ -133,7 +193,7 @@ function distanciaIdeal() {
   const lateral = mqTarjetaLateral.matches;
   const anchoUtil = lateral ? 0.6 : 1;      // la tarjeta ocupa ~40% a la derecha
   const altoUtil = lateral ? 1 : 0.56;      // en vertical, la tarjeta ocupa la parte baja
-  const mitadAncho = 1.75, mitadAlto = 1.9;
+  const mitadAncho = 1.95, mitadAlto = 1.95;
   const dAncho = mitadAncho / (tanMitadFov() * aspecto * anchoUtil);
   const dAlto = mitadAlto / (tanMitadFov() * (lateral ? 1 : Math.max(altoUtil, 0.8)));
   const dAltoTarjeta = mitadAlto / (tanMitadFov() * altoUtil * 1.05);
@@ -168,6 +228,7 @@ function alRedimensionar() {
   camara.aspect = w / h;
   renderer.setSize(w, h, false);
   compositor?.setSize(w, h);
+  acabado?.uniforms.uRes.value.set(w * calidad.pixelRatio, h * calidad.pixelRatio);
   const nueva = distanciaIdeal();
   if (estado.escena && !estado.volando) {
     // Mantener la dirección de la cámara, ajustar solo la distancia
@@ -271,11 +332,13 @@ function medirRendimiento(dt) {
   medidor.frames = 0; medidor.tiempo = 0;
   if (++medidor.ventanas < 2) return; // ignorar el arranque
   if (fps < 45 && compositor) {
-    compositor.dispose(); compositor = null; bloom = null; // sin bloom
+    compositor.dispose(); compositor = null; bloom = null; acabado = null; // sin postprocesado
+    document.body.classList.add('sin-post'); // viñeta por CSS como respaldo
   } else if (fps < 38 && calidad.pixelRatio > 1.25) {
     calidad.pixelRatio = Math.max(1, calidad.pixelRatio - 0.5);
     renderer.setPixelRatio(calidad.pixelRatio);
     particulas.setPixelRatio(calidad.pixelRatio);
+    ambiente.setPixelRatio(calidad.pixelRatio);
     alRedimensionar();
   }
 }
@@ -301,9 +364,11 @@ function paso(dt, dibujar = true) {
 
   ramo.actualizar(dt, tiempo);
   particulas.actualizar(dt, tiempo);
+  ambiente.actualizar(dt, tiempo, camara, controles.target, ramo.progreso);
+  if (acabado) acabado.uniforms.uTiempo.value = tiempo;
 
   if (estado.escena && !estado.volando) aplicarParallax(dt);
-  else if (!estado.escena) {
+  else if (!estado.escena && !estado.volando) {
     // En la pantalla de inicio la cámara flota suavemente
     camara.position.y = posicionInicial.y + Math.sin(tiempo * 0.4) * 0.3;
     camara.lookAt(objetivo);
@@ -337,12 +402,15 @@ function posicionFinal() {
 /** 2. La cámara viaja desde lejos hasta el ramo. */
 async function volarHaciaElRamo() {
   estado.volando = true;
-  const desde = camara.position.clone();
-  const hasta = posicionFinal();
-  const medio = desde.clone().lerp(hasta, 0.5).add(new THREE.Vector3(distancia * 0.35, 0, 0));
-  const curva = new THREE.QuadraticBezierCurve3(desde, medio, hasta);
-  await animar(movimientoReducido ? 1.2 : 3.2, (k) => {
-    curva.getPoint(k, camara.position);
+  // Entrada cinematográfica: la cámara baja desde el cielo girando alrededor del ramo
+  const desde = new THREE.Spherical().setFromVector3(camara.position.clone().sub(objetivo));
+  const hasta = new THREE.Spherical().setFromVector3(posicionFinal().sub(objetivo));
+  const esf = new THREE.Spherical();
+  await animar(movimientoReducido ? 1.2 : 4.2, (k) => {
+    esf.radius = THREE.MathUtils.lerp(desde.radius, hasta.radius, k);
+    esf.phi = THREE.MathUtils.lerp(desde.phi, hasta.phi, Math.pow(k, 0.7));
+    esf.theta = THREE.MathUtils.lerp(desde.theta, hasta.theta, k);
+    camara.position.setFromSpherical(esf).add(objetivo);
     camara.lookAt(objetivo);
   });
   estado.volando = false;
@@ -387,7 +455,9 @@ interfaz.alPedirOtraVez(() => {
 
 async function iniciar() {
   alRedimensionar();
-  posicionInicial.copy(objetivo).add(new THREE.Vector3(0, distancia * 0.55, distancia * 2.3));
+  // Posición de la intro: alta y de costado; desde ahí la cámara baja girando
+  const giro = movimientoReducido ? 0 : 1.9;
+  posicionInicial.copy(objetivo).add(new THREE.Vector3(Math.sin(giro) * distancia * 2.3, distancia * 0.55, Math.cos(giro) * distancia * 2.3));
   camara.position.copy(posicionInicial);
   camara.lookAt(objetivo);
   addEventListener('resize', alRedimensionar);
@@ -445,6 +515,8 @@ iniciar().catch((err) => {
 // Depuración: con ?debug en la URL se puede avanzar la animación a mano
 // desde la consola, por ejemplo: __avanzar(5)
 if (parametros.has('debug')) {
+  window.__escena = escena;
+  window.__desactivarPost = () => { compositor = null; };
   window.__avanzar = (segundos, dt = 1 / 60) => {
     for (let s = 0; s < segundos; s += dt) paso(dt, s + dt >= segundos);
     return { estado, ramo: ramo.tiempo, bloom: !!compositor };

@@ -98,6 +98,7 @@ css/styles.css     Estilos (móvil primero, tarjeta de vidrio esmerilado)
 js/main.js         Escena, cámara, luces, bloom, flujo de la experiencia
 js/flowers.js      Flores 3D procedurales, florecimiento y brisa
 js/particles.js    Estrellas, pétalos cayendo, luciérnagas y explosión al tocar
+js/ambiente.js     Halo, rayos de luz, bokeh del fondo y niebla
 js/ui.js           Pantallas, máquina de escribir, recuerdos y música
 assets/audio/      Aquí va la música (opcional)
 favicon.svg        Florcita morada
@@ -109,7 +110,12 @@ preview.png        Imagen para compartir el link
 - Three.js 0.170 por CDN con `importmap`; todas las rutas son relativas (`./`).
 - Pétalos, hojas, estambres y botones de lavanda usan `InstancedMesh` con morph targets
   por instancia (cada pétalo cambia de forma mientras se abre).
-- Brillo de borde (fresnel) y falsa translucidez inyectados en `MeshStandardMaterial`.
+- Pétalos con `MeshPhysicalMaterial` (sheen aterciopelado) más shader propio: venas,
+  motitas en los lirios, gotitas de rocío que destellan, brillo de borde y translucidez.
+- Papel de envoltura en dos capas (ciruela + organza translúcida) y lazo de satén.
+- Iluminación de entorno (`RoomEnvironment` + PMREM) para reflejos y volumen.
+- Atmósfera: halo detrás del ramo, rayos de luz, bokeh en el fondo y niebla baja.
+- Acabado de cine en una sola pasada: gradación de color, viñeta, grano y aberración leve.
 - Bloom suave (`UnrealBloomPass`) que se apaga solo si el equipo no llega a ~45 FPS;
   si aún va lento, baja la resolución.
 - `devicePixelRatio` limitado a 2, menos partículas en celular, render en pausa cuando la

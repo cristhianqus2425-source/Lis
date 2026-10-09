@@ -193,6 +193,8 @@ button { font: inherit; color: inherit; }
   right: 16px;
   bottom: calc(16px + var(--seguro-abajo));
   max-height: 47dvh;
+  max-width: 560px;
+  margin: 0 auto;
   overflow-y: auto;
   scrollbar-width: none;
   padding: 1.1rem 1.3rem 1rem;
@@ -326,7 +328,7 @@ button { font: inherit; color: inherit; }
 #musica.silenciado .tachado { opacity: 1; }
 
 /* ---------- pantallas anchas: tarjeta a la derecha ---------- */
-@media (min-aspect-ratio: 1/1) and (min-width: 700px) {
+@media (min-aspect-ratio: 6/5) and (min-width: 700px) {
   #tarjeta {
     left: auto;
     right: 4vw;
@@ -386,4 +388,14 @@ body.captura #titulo-captura {
   #carga p { animation-duration: 6s; }
   .capullo { animation: none; }
   .recuerdo { transition: opacity 1.2s ease; translate: none !important; }
+}
+
+/* ---------- viñeta de respaldo (cuando el equipo no aguanta el postprocesado) ---------- */
+body.sin-post::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: radial-gradient(120% 90% at 50% 45%, transparent 55%, rgba(10, 2, 18, .55) 100%);
 }

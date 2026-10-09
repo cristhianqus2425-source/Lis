@@ -54,7 +54,7 @@ const shaderPuntoFragment = /* glsl */ `
   varying float vBrillo;
   void main() {
     float d = length(gl_PointCoord - 0.5);
-    float nucleo = smoothstep(0.5, 0.0, d);
+    float nucleo = 1.0 - smoothstep(0.0, 0.5, d);
     float alfa = pow(nucleo, 2.2) * vBrillo;
     if (alfa < 0.003) discard;
     gl_FragColor = vec4(uColor * (0.8 + nucleo), alfa);

@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <!-- Sin zoom accidental en móvil y respetando el notch (viewport-fit=cover) -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#2a0f3d" />
+  <title>Flores moradas para Lis 💜</title>
+  <meta name="description" content="Un pequeño ramo de flores moradas, hecho a mano para ti." />
+
+  <!-- Vista previa al compartir (WhatsApp, Telegram, etc.).
+       og:image y og:url deben ser URLs ABSOLUTAS: si tu repositorio tiene otro
+       nombre o usuario, cámbialas aquí. -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Flores moradas para Lis 💜" />
+  <meta property="og:description" content="Toca para abrir tu ramo." />
+  <meta property="og:url" content="https://cristhianqus2425-source.github.io/Lis/" />
+  <meta property="og:image" content="https://cristhianqus2425-source.github.io/Lis/preview.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+  <link rel="apple-touch-icon" href="./preview.png" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Quicksand:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./css/styles.css" />
+
+  <!-- Three.js por CDN (sin paso de build) -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+      }
+    }
+  </script>
+  <script type="module" src="./js/main.js"></script>
+</head>
+<body>
+  <canvas id="escena" aria-hidden="true"></canvas>
+
+  <!-- 0. Pantalla de carga: un pétalo girando -->
+  <div id="carga" class="pantalla" role="status" aria-live="polite">
+    <div class="petalo-girando" aria-hidden="true"><span></span><span></span></div>
+    <p>preparando tus flores…</p>
+  </div>
+
+  <!-- 1. Pantalla de inicio: capullo que late -->
+  <div id="intro" class="pantalla oculta" role="button" tabindex="0" aria-label="Toca para abrir">
+    <svg class="capullo" viewBox="0 0 120 170" aria-hidden="true">
+      <defs>
+        <radialGradient id="g-brillo">
+          <stop offset="0" stop-color="#e6ccff" stop-opacity=".75" />
+          <stop offset=".45" stop-color="#b57edc" stop-opacity=".25" />
+          <stop offset="1" stop-color="#7b3fb5" stop-opacity="0" />
+        </radialGradient>
+        <linearGradient id="g-centro" x1="0" y1="1" x2="0" y2="0">
+          <stop offset="0" stop-color="#3d1659" />
+          <stop offset=".6" stop-color="#7b3fb5" />
+          <stop offset="1" stop-color="#c99be8" />
+        </linearGradient>
+        <linearGradient id="g-lado" x1="0" y1="1" x2="0" y2="0">
+          <stop offset="0" stop-color="#4a1d6e" />
+          <stop offset=".55" stop-color="#9a5cd0" />
+          <stop offset="1" stop-color="#e6ccff" />
+        </linearGradient>
+        <linearGradient id="g-hoja" x1="0" y1="1" x2="1" y2="0">
+          <stop offset="0" stop-color="#2f5d34" />
+          <stop offset="1" stop-color="#7fb575" />
+        </linearGradient>
+      </defs>
+      <circle class="brillo" cx="60" cy="66" r="58" fill="url(#g-brillo)" />
+      <path class="tallo" d="M60 168 C 58 140, 63 122, 60 100" />
+      <path class="hoja" d="M60 140 C 44 136, 32 122, 30 108 C 44 112, 56 124, 60 140 Z" fill="url(#g-hoja)" />
+      <g class="petalos">
+        <path class="p-centro" d="M60 102 C 40 99, 36 62, 60 28 C 84 62, 80 99, 60 102 Z" fill="url(#g-centro)" />
+        <path class="p-izq" d="M60 102 C 41 102, 29 72, 43 40 C 52 54, 58 78, 60 102 Z" fill="url(#g-lado)" />
+        <path class="p-der" d="M60 102 C 79 102, 91 72, 77 40 C 68 54, 62 78, 60 102 Z" fill="url(#g-lado)" />
+      </g>
+      <circle class="chispa c1" cx="22" cy="40" r="1.6" />
+      <circle class="chispa c2" cx="100" cy="30" r="1.3" />
+      <circle class="chispa c3" cx="96" cy="86" r="1.8" />
+      <circle class="chispa c4" cx="18" cy="92" r="1.2" />
+    </svg>
+    <h1 class="para">Para <span id="intro-nombre">Lis</span> 💜</h1>
+    <p class="toca">toca para abrir</p>
+  </div>
+
+  <div id="destello" aria-hidden="true"></div>
+
+  <!-- 4–6. Tarjeta con el mensaje, la firma y "ver de nuevo" -->
+  <section id="tarjeta" class="oculta" aria-live="polite">
+    <h2 id="titulo"></h2>
+    <p id="mensaje"></p>
+    <p id="firma"></p>
+    <button id="otra-vez" type="button">ver de nuevo</button>
+  </section>
+
+  <!-- 5. Recuerdos flotantes -->
+  <div id="recuerdos" aria-live="polite"></div>
+
+  <!-- Botón de música (solo aparece si hay música en config.js) -->
+  <button id="musica" type="button" aria-label="Silenciar música" hidden>
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M9 18V6l10-2v12" /><circle cx="6.5" cy="18" r="2.5" /><circle cx="16.5" cy="16" r="2.5" />
+      <path class="tachado" d="M4 4l16 16" />
+    </svg>
+  </button>
+
+  <!-- Título solo para generar la imagen de vista previa (?captura) -->
+  <div id="titulo-captura" aria-hidden="true">Flores moradas<br />para Lis 💜</div>
+
+  <!-- Si el navegador es muy antiguo y no carga los módulos, avisar en vez de girar para siempre -->
+  <script>
+    setTimeout(function () {
+      var p = document.querySelector('#carga p');
+      if (p && !document.querySelector('#carga.oculta')) p.textContent = 'Esto está tardando… prueba abrir el link en Chrome o Safari actualizado 💜';
+    }, 20000);
+  </script>
+
+  <noscript>
+    <p class="sin-js">Esta sorpresa necesita JavaScript activado 💜</p>
+  </noscript>
+</body>
+</html>

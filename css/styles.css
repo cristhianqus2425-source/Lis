@@ -1,0 +1,389 @@
+/* =====================================================================
+   styles.css — Flores moradas
+   Móvil primero; en pantallas anchas la tarjeta pasa a la derecha.
+   ===================================================================== */
+
+:root {
+  --fondo: #2a0f3d;
+  --fondo-oscuro: #12051f;
+  --morado: #5b2a86;
+  --violeta: #7b3fb5;
+  --lila: #b57edc;
+  --lila-claro: #e6ccff;
+  --dorado: #f5d58a;
+  --lavanda-rosa: #e7b8e6;
+  --texto: #f8f0ff;
+
+  --cursiva: 'Great Vibes', 'Brush Script MT', cursive;
+  --limpia: 'Quicksand', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  --seguro-arriba: env(safe-area-inset-top, 0px);
+  --seguro-abajo: env(safe-area-inset-bottom, 0px);
+}
+
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+html,
+body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;              /* sin barras de scroll raras */
+  overscroll-behavior: none;     /* sin "rebote" al arrastrar */
+  background: radial-gradient(120% 90% at 50% 100%, #3d1659 0%, var(--fondo) 45%, var(--fondo-oscuro) 100%);
+  color: var(--texto);
+  font-family: var(--limpia);
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-text-size-adjust: 100%;
+}
+
+body { height: 100dvh; }
+
+#escena {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  touch-action: none;            /* gestos los maneja la escena 3D */
+  outline: none;
+}
+
+button { font: inherit; color: inherit; }
+
+/* ---------- pantallas a pantalla completa ---------- */
+.pantalla {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: calc(24px + var(--seguro-arriba)) 16px calc(24px + var(--seguro-abajo));
+  text-align: center;
+  transition: opacity 1s ease, visibility 1s;
+  z-index: 10;
+}
+.pantalla.oculta { opacity: 0; visibility: hidden; pointer-events: none; }
+
+/* ---------- 0. carga: un pétalo girando ---------- */
+#carga {
+  background: radial-gradient(80% 60% at 50% 50%, #3a1556 0%, var(--fondo) 55%, var(--fondo-oscuro) 100%);
+  z-index: 30;
+}
+#carga p {
+  margin: 0;
+  font-size: 0.9rem;
+  letter-spacing: 0.12em;
+  color: var(--lila-claro);
+  opacity: 0.8;
+  animation: respirar 2.4s ease-in-out infinite;
+}
+.petalo-girando {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  animation: girar 2.6s cubic-bezier(.6, .1, .4, .9) infinite;
+}
+.petalo-girando span {
+  position: absolute;
+  inset: 6px 14px;
+  border-radius: 50% 50% 50% 50% / 70% 70% 30% 30%;
+  background: linear-gradient(to top, var(--morado), var(--lila) 60%, var(--lila-claro));
+  box-shadow: 0 0 22px rgba(181, 126, 220, .55);
+  transform-origin: 50% 100%;
+}
+.petalo-girando span:nth-child(2) {
+  transform: rotate(180deg);
+  transform-origin: 50% 50%;
+  opacity: .55;
+  filter: blur(.5px);
+}
+
+@keyframes girar { to { transform: rotate(360deg); } }
+@keyframes respirar { 50% { opacity: .45; } }
+
+/* ---------- 1. inicio: capullo que late ---------- */
+#intro {
+  cursor: pointer;
+  background:
+    radial-gradient(60% 45% at 50% 42%, rgba(123, 63, 181, .28), transparent 70%),
+    radial-gradient(140% 100% at 50% 50%, rgba(18, 5, 31, .25), rgba(18, 5, 31, .82));
+  outline: none;
+}
+.capullo {
+  width: min(42vw, 170px);
+  height: auto;
+  overflow: visible;
+  animation: latido 2.2s ease-in-out infinite;
+  filter: drop-shadow(0 0 18px rgba(181, 126, 220, .45));
+}
+.capullo .tallo { fill: none; stroke: #4c8a52; stroke-width: 3; stroke-linecap: round; }
+.capullo .brillo { transform-box: fill-box; transform-origin: center; animation: halo 2.2s ease-in-out infinite; }
+.capullo .petalos path {
+  transform-box: view-box;
+  transform-origin: 60px 102px;
+  transition: transform .9s cubic-bezier(.2, .8, .2, 1), opacity .9s ease;
+}
+.capullo .chispa { fill: var(--dorado); animation: titilar 2.8s ease-in-out infinite; }
+.capullo .c2 { animation-delay: .7s; }
+.capullo .c3 { animation-delay: 1.4s; }
+.capullo .c4 { animation-delay: 2.1s; }
+
+.para {
+  margin: .4rem 0 0;
+  font-family: var(--cursiva);
+  font-weight: 400;
+  font-size: clamp(2.6rem, 12vw, 4.2rem);
+  line-height: 1.1;
+  color: #fbf3ff;
+  text-shadow: 0 0 18px rgba(181, 126, 220, .8), 0 0 42px rgba(123, 63, 181, .6);
+}
+.toca {
+  margin: 0;
+  font-size: .85rem;
+  letter-spacing: .28em;
+  text-transform: lowercase;
+  color: var(--lila-claro);
+  animation: respirar 2.2s ease-in-out infinite;
+}
+
+/* el capullo se abre */
+#intro.abriendo { pointer-events: none; }
+#intro.abriendo .capullo { animation: none; transform: scale(1.12); transition: transform .9s ease; }
+#intro.abriendo .p-izq { transform: rotate(-42deg); }
+#intro.abriendo .p-der { transform: rotate(42deg); }
+#intro.abriendo .p-centro { transform: scale(.85, .9); }
+#intro.abriendo .brillo { animation: none; transform: scale(1.8); transition: transform .9s ease; }
+#intro.abriendo .para,
+#intro.abriendo .toca { opacity: 0; transition: opacity .5s ease; }
+
+@keyframes latido {
+  0%, 100% { transform: scale(1); }
+  14% { transform: scale(1.06); }
+  28% { transform: scale(1); }
+  42% { transform: scale(1.04); }
+  70% { transform: scale(1); }
+}
+@keyframes halo { 50% { transform: scale(1.12); opacity: .75; } }
+@keyframes titilar { 0%, 100% { opacity: .15; } 50% { opacity: 1; } }
+
+/* ---------- 2. destello ---------- */
+#destello {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(circle at 50% 42%, #fff 0%, var(--lila-claro) 22%, rgba(181, 126, 220, .35) 45%, rgba(91, 42, 134, 0) 75%);
+  transition: opacity .9s ease;
+}
+#destello.activo { opacity: 1; transition: opacity .3s ease; }
+
+/* ---------- 4. tarjeta de vidrio esmerilado ---------- */
+#tarjeta {
+  position: fixed;
+  z-index: 5;
+  left: 16px;
+  right: 16px;
+  bottom: calc(16px + var(--seguro-abajo));
+  max-height: 47dvh;
+  overflow-y: auto;
+  scrollbar-width: none;
+  padding: 1.1rem 1.3rem 1rem;
+  border-radius: 24px;
+  background: linear-gradient(160deg, rgba(91, 42, 134, .38), rgba(30, 9, 46, .55));
+  border: 1px solid rgba(230, 204, 255, .22);
+  box-shadow: 0 12px 40px rgba(10, 2, 20, .45), inset 0 1px 0 rgba(255, 255, 255, .08);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  backdrop-filter: blur(16px) saturate(140%);
+  transition: opacity 1s ease, transform 1s cubic-bezier(.2, .8, .2, 1), visibility 1s;
+  -webkit-user-select: text;
+  user-select: text;
+}
+#tarjeta::-webkit-scrollbar { display: none; }
+#tarjeta.oculta { opacity: 0; transform: translateY(24px); visibility: hidden; pointer-events: none; }
+
+#titulo {
+  margin: 0 0 .4rem;
+  font-family: var(--cursiva);
+  font-weight: 400;
+  font-size: clamp(1.9rem, 8.4vw, 2.6rem);
+  line-height: 1.15;
+  text-align: center;
+  background: linear-gradient(100deg, var(--dorado), #fff4d6 45%, var(--lila-claro));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 10px rgba(245, 213, 138, .25));
+}
+#mensaje {
+  margin: 0;
+  white-space: pre-line;
+  font-size: clamp(.95rem, 3.9vw, 1.05rem);
+  line-height: 1.62;
+  font-weight: 500;
+  color: var(--texto);
+  text-shadow: 0 1px 8px rgba(18, 5, 31, .55);
+}
+.cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1.05em;
+  margin-left: 2px;
+  vertical-align: -.15em;
+  background: var(--dorado);
+  animation: parpadeo .9s steps(1) infinite;
+}
+@keyframes parpadeo { 50% { opacity: 0; } }
+
+#firma {
+  margin: .5rem 0 0;
+  text-align: right;
+  font-family: var(--cursiva);
+  font-size: clamp(1.7rem, 7vw, 2.2rem);
+  color: var(--lila-claro);
+  text-shadow: 0 0 14px rgba(181, 126, 220, .6);
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 1.4s ease, transform 1.4s ease;
+}
+#firma.visible { opacity: 1; transform: none; }
+
+#otra-vez {
+  display: block;
+  margin: .5rem auto 0;
+  padding: .4rem 1.1rem;
+  border-radius: 999px;
+  border: 1px solid rgba(230, 204, 255, .3);
+  background: rgba(230, 204, 255, .06);
+  color: var(--lila-claro);
+  font-size: .8rem;
+  letter-spacing: .1em;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 1s ease, background .3s ease;
+}
+#otra-vez.visible { opacity: .85; pointer-events: auto; }
+#otra-vez:hover,
+#otra-vez:focus-visible { background: rgba(230, 204, 255, .16); outline: none; }
+
+/* ---------- 5. recuerdos flotantes ---------- */
+#recuerdos { position: fixed; inset: 0; z-index: 4; pointer-events: none; }
+.recuerdo {
+  position: absolute;
+  top: 0;
+  left: 0;
+  max-width: min(70vw, 260px);
+  padding: .45rem .9rem;
+  border-radius: 999px;
+  font-size: .95rem;
+  font-weight: 500;
+  color: var(--texto);
+  background: rgba(42, 15, 61, .45);
+  border: 1px solid rgba(230, 204, 255, .22);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 0 20px rgba(181, 126, 220, .25);
+  text-align: center;
+  opacity: 0;
+  translate: 0 10px;
+  transition: opacity 1.2s ease, translate 4s ease-out;
+}
+.recuerdo::before { content: '💜 '; }
+.recuerdo.visible { opacity: 1; translate: 0 -6px; }
+.recuerdo.saliendo { opacity: 0; translate: 0 -22px; }
+
+/* ---------- botón de música ---------- */
+#musica {
+  position: fixed;
+  z-index: 15;
+  top: calc(14px + var(--seguro-arriba));
+  right: 14px;
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid rgba(230, 204, 255, .25);
+  background: rgba(42, 15, 61, .4);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 1s ease;
+}
+#musica.visible { opacity: .85; }
+#musica svg { width: 20px; height: 20px; fill: none; stroke: var(--lila-claro); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+#musica .tachado { opacity: 0; }
+#musica.silenciado .tachado { opacity: 1; }
+
+/* ---------- pantallas anchas: tarjeta a la derecha ---------- */
+@media (min-aspect-ratio: 1/1) and (min-width: 700px) {
+  #tarjeta {
+    left: auto;
+    right: 4vw;
+    bottom: auto;
+    top: 50%;
+    width: min(440px, 36vw);
+    max-height: 84dvh;
+    transform: translateY(-50%);
+    padding: 1.6rem 1.8rem 1.3rem;
+  }
+  #tarjeta.oculta { transform: translateY(calc(-50% + 24px)); }
+  #titulo { font-size: clamp(2rem, 3.2vw, 2.8rem); }
+  #mensaje { font-size: clamp(1rem, 1.15vw, 1.12rem); }
+}
+/* celular en horizontal (poca altura) */
+@media (min-aspect-ratio: 1/1) and (max-height: 500px) {
+  #tarjeta { padding: .9rem 1.1rem; max-height: 88dvh; }
+  #titulo { font-size: 1.8rem; }
+  #mensaje { font-size: .88rem; line-height: 1.5; }
+}
+
+/* ---------- modo captura (solo para generar preview.png) ---------- */
+#titulo-captura { display: none; }
+body.captura #carga,
+body.captura #intro,
+body.captura #tarjeta,
+body.captura #musica { display: none; }
+body.captura #titulo-captura {
+  display: block;
+  position: fixed;
+  z-index: 5;
+  left: 6%;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: var(--cursiva);
+  font-size: 92px;
+  line-height: 1.15;
+  color: #fbf3ff;
+  text-shadow: 0 0 20px rgba(181, 126, 220, .9), 0 0 50px rgba(123, 63, 181, .7);
+}
+
+.sin-js {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+/* ---------- movimiento reducido: versión tranquila ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .capullo,
+  .capullo .brillo,
+  .petalo-girando,
+  .toca,
+  #carga p { animation-duration: 6s; }
+  .capullo { animation: none; }
+  .recuerdo { transition: opacity 1.2s ease; translate: none !important; }
+}

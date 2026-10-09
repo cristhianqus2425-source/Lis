@@ -4,7 +4,28 @@
 //  Todo usa InstancedMesh o Points: un draw call por sistema.
 // =====================================================================
 import * as THREE from 'three';
-import { agregarBrilloPetalo } from './flowers.js';
+
+/**
+ * Brillo de borde (fresnel) lila y falsa translucidez para los pétalos.
+ */
+function agregarBrilloPetalo(material, colorBorde = '#c99bff', fuerza = 0.9, translucidez = 0.16) {
+  material.onBeforeCompile = (shader) => {
+    shader.uniforms.uColorBorde = { value: new THREE.Color(colorBorde) };
+    shader.uniforms.uFuerzaBorde = { value: fuerza };
+    shader.uniforms.uTranslucidez = { value: translucidez };
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', '#include <common>\nuniform vec3 uColorBorde;\nuniform float uFuerzaBorde;\nuniform float uTranslucidez;')
+      .replace(
+        '#include <emissivemap_fragment>',
+        `#include <emissivemap_fragment>
+        float fresnel = pow(clamp(1.0 - abs(dot(normalize(vViewPosition), normal)), 0.0, 1.0), 2.2);
+        totalEmissiveRadiance += uColorBorde * fresnel * uFuerzaBorde;
+        totalEmissiveRadiance += diffuseColor.rgb * uTranslucidez;`
+      );
+  };
+  material.customProgramCacheKey = () => `petalo-${colorBorde}-${fuerza}-${translucidez}`;
+  return material;
+}
 
 const PALETA_PETALOS = ['#7b3fb5', '#9a5cd0', '#b57edc', '#cfa2ee', '#e6ccff', '#c58bd8'];
 
@@ -93,7 +114,7 @@ export class Particulas {
     this.limites = { ancho: 12, alto: 10, profundidad: 8 };
     this.dummy = new THREE.Object3D();
 
-    this.#crearEstrellas();
+    if (this.o.cantidades.estrellas > 0) this.#crearEstrellas();
     this.#crearPetalos();
     this.#crearLuciernagas();
     this.#crearChispas();
@@ -228,7 +249,7 @@ export class Particulas {
   }
 
   setPixelRatio(pr) {
-    for (const m of [this.matEstrellas, this.matLuciernagas, this.matChispas]) m.uniforms.uPixelRatio.value = pr;
+    for (const m of [this.matEstrellas, this.matLuciernagas, this.matChispas]) if (m) m.uniforms.uPixelRatio.value = pr;
   }
 
   /** Pequeña explosión de pétalos y brillitos en un punto 3D. */
@@ -253,7 +274,7 @@ export class Particulas {
   }
 
   actualizar(dt, t) {
-    for (const m of [this.matEstrellas, this.matLuciernagas, this.matChispas]) m.uniforms.uTiempo.value = t;
+    for (const m of [this.matEstrellas, this.matLuciernagas, this.matChispas]) if (m) m.uniforms.uTiempo.value = t;
 
     if (this.cayendo) this.intensidad = Math.min(1, this.intensidad + dt * 0.5);
     const L = this.limites;

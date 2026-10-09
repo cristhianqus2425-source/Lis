@@ -1,8 +1,8 @@
 # 💜 Flores moradas para Lis
 
-Página web estática con un ramo de flores 3D (tulipanes, lirios y lavanda) generado con
-Three.js, que florece al abrirla. Está hecha para GitHub Pages: HTML + CSS + JavaScript,
-sin paso de build.
+Página web estática donde una rosa morada real se abre ante sus ojos (video time-lapse)
+en medio de una noche violeta con estrellas, bokeh, pétalos que caen y luciérnagas.
+Está hecha para GitHub Pages: HTML + CSS + JavaScript, sin paso de build.
 
 **Link:** https://cristhianqus2425-source.github.io/Lis/
 
@@ -50,7 +50,7 @@ servidor local corriendo:
 
 ```bash
 "C:/Program Files/Google/Chrome/Application/chrome.exe" --headless=new --hide-scrollbars \
-  --window-size=1200,630 --virtual-time-budget=10000 \
+  --window-size=1200,630 --virtual-time-budget=5000 \
   --screenshot=preview.png "http://localhost:8765/?captura"
 ```
 
@@ -75,8 +75,7 @@ y abre http://localhost:8765. Para verla como celular: F12 → ícono de teléfo
 Parámetros útiles en la URL (solo para probar):
 
 - `?auto` — empieza sin tener que tocar la pantalla de inicio.
-- `?captura` — ramo ya abierto con el título grande, para la imagen de vista previa.
-- `?debug` — expone `__avanzar(segundos)` en la consola para adelantar la animación.
+- `?captura` — flor ya abierta con el título grande, para la imagen de vista previa.
 
 ## Publicar en GitHub Pages
 
@@ -92,34 +91,41 @@ Cada vez que hagas `git push`, la página se actualiza sola en uno o dos minutos
 ## Estructura
 
 ```
-index.html         Estructura, meta tags, importmap de Three.js
-config.js          ← TEXTOS EDITABLES
-css/styles.css     Estilos (móvil primero, tarjeta de vidrio esmerilado)
-js/main.js         Escena, cámara, luces, bloom, flujo de la experiencia
-js/flowers.js      Flores 3D procedurales, florecimiento y brisa
-js/particles.js    Estrellas, pétalos cayendo, luciérnagas y explosión al tocar
-js/ambiente.js     Halo, rayos de luz, bokeh del fondo y niebla
-js/ui.js           Pantallas, máquina de escribir, recuerdos y música
-assets/audio/      Aquí va la música (opcional)
-favicon.svg        Florcita morada
-preview.png        Imagen para compartir el link
+index.html            Estructura, capas, meta tags, importmap de Three.js
+config.js             ← TEXTOS EDITABLES
+css/styles.css        Estilos: capas, mezcla del video, rayos, grano, tarjeta de vidrio
+js/main.js            Orquesta las capas, el parallax y el flujo de la experiencia
+js/fondo.js           Capa trasera (canvas 2D): estrellas y bokeh
+js/flor.js            Capa central: el video de la flor abriéndose
+js/particles.js       Capa delantera (Three.js): pétalos, luciérnagas, explosión al tocar
+js/ui.js              Pantallas, máquina de escribir, recuerdos y música
+assets/video/         La rosa en versión vertical (celular) y horizontal (laptop)
+assets/audio/         Aquí va la música (opcional)
+favicon.svg           Florcita morada
+preview.png           Imagen para compartir el link
 ```
 
-## Detalles técnicos
+## Cómo funciona (2.5D)
 
-- Three.js 0.170 por CDN con `importmap`; todas las rutas son relativas (`./`).
-- Pétalos, hojas, estambres y botones de lavanda usan `InstancedMesh` con morph targets
-  por instancia (cada pétalo cambia de forma mientras se abre).
-- Pétalos con `MeshPhysicalMaterial` (sheen aterciopelado) más shader propio: venas,
-  motitas en los lirios, gotitas de rocío que destellan, brillo de borde y translucidez.
-- Papel de envoltura en dos capas (ciruela + organza translúcida) y lazo de satén.
-- Iluminación de entorno (`RoomEnvironment` + PMREM) para reflejos y volumen.
-- Atmósfera: halo detrás del ramo, rayos de luz, bokeh en el fondo y niebla baja.
-- Acabado de cine en una sola pasada: gradación de color, viñeta, grano y aberración leve.
-- Bloom suave (`UnrealBloomPass`) que se apaga solo si el equipo no llega a ~45 FPS;
-  si aún va lento, baja la resolución.
-- `devicePixelRatio` limitado a 2, menos partículas en celular, render en pausa cuando la
-  pestaña no está visible.
-- Respeta `prefers-reduced-motion`: sin giro automático, menos partículas, brisa más
-  suave y el mensaje aparece completo sin la máquina de escribir.
-- Giroscopio para el parallax en celular (pide permiso en iOS al tocar "abrir").
+La página se arma con capas que se mueven distinto al inclinar el celular (giroscopio) o
+mover el mouse, lo que da sensación de profundidad:
+
+1. **Fondo** (canvas 2D): cielo con estrellas que titilan y luces desenfocadas (bokeh).
+2. **Flor** (video): el video tiene fondo negro y se dibuja con `mix-blend-mode: lighten`,
+   así el negro desaparece y la rosa flota sobre la noche. Los bordes se difuminan
+   con una máscara. Se carga solo la versión que corresponde a la pantalla (~2,4 MB).
+3. **Partículas** (Three.js transparente): pétalos que caen, luciérnagas y la explosión
+   de pétalos al tocar.
+4. **Acabado** (CSS): rayos de luz, viñeta y grano de película.
+
+Si el video no carga, se muestra una foto de la rosa abierta. Respeta
+`prefers-reduced-motion` (sin parallax, menos partículas, mensaje sin máquina de escribir)
+y pausa todo cuando la pestaña no está visible.
+
+## Créditos
+
+Video original de la rosa: ["Time-lapse of opening red rose isolated on black background"](https://commons.wikimedia.org/wiki/File:Time-lapse_of_opening_red_rose_isolated_on_black_background.Blooming_red_roses_flower_buds.webm)
+de **Alex Tr**, en Wikimedia Commons, bajo licencia [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/).
+Cambios: recortado, con margen negro, color pasado de rosado a morado y reproducido más lento.
+La licencia pide dar crédito: por eso aparece una línea pequeña al pie de la tarjeta.
+Si la quitas, deja el crédito visible en otro lugar de la página.

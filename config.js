@@ -24,7 +24,7 @@ export const CONFIG = {
     'Lis, hoy es el día de las flores moradas y no encontré mejor excusa para regalarte unas que nunca se marchiten.\n\n' +
     'Me alegra muchísimo haberte conocido. Cada rato que compartimos se vuelve uno de mis favoritos, ' +
     'y tu forma de ser hace que todo se sienta más ligero.\n\n' +
-    'Por cierto: «lis» también es el nombre de una flor, el lirio. Por eso hay unos cuantos en este ramo. 🌸',
+    'Por cierto: esta rosa se abrió de verdad; yo solo la pinté de morado y la aceleré un poquito para que la vieras florecer. 🌸',
 
   // Recuerdos o detalles de ustedes (opcional). Aparecen flotando cerca del ramo.
   // Déjalo vacío [] para no mostrar ninguno. Ejemplos:

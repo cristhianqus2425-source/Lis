@@ -13,7 +13,7 @@
        nombre o usuario, cámbialas aquí. -->
   <meta property="og:type" content="website" />
   <meta property="og:title" content="Flores moradas para Lis 💜" />
-  <meta property="og:description" content="Toca para abrir tu ramo." />
+  <meta property="og:description" content="Toca para abrir tu flor." />
   <meta property="og:url" content="https://cristhianqus2425-source.github.io/Lis/" />
   <meta property="og:image" content="https://cristhianqus2425-source.github.io/Lis/preview.png" />
   <meta property="og:image:width" content="1200" />
@@ -40,7 +40,15 @@
   <script type="module" src="./js/main.js"></script>
 </head>
 <body>
+  <!-- Capas, de atrás hacia adelante -->
+  <canvas id="fondo" aria-hidden="true"></canvas>
+  <div id="flor" aria-hidden="true">
+    <div class="resplandor"></div>
+    <video muted playsinline webkit-playsinline preload="auto" disablepictureinpicture disableremoteplayback></video>
+  </div>
+  <div id="rayos" aria-hidden="true"></div>
   <canvas id="escena" aria-hidden="true"></canvas>
+  <div id="acabado" aria-hidden="true"></div>
 
   <!-- 0. Pantalla de carga: un pétalo girando -->
   <div id="carga" class="pantalla" role="status" aria-live="polite">
@@ -97,6 +105,8 @@
     <p id="mensaje"></p>
     <p id="firma"></p>
     <button id="otra-vez" type="button">ver de nuevo</button>
+    <!-- Crédito del video (licencia CC BY 3.0) -->
+    <p id="credito">rosa: video de <a href="https://commons.wikimedia.org/wiki/File:Time-lapse_of_opening_red_rose_isolated_on_black_background.Blooming_red_roses_flower_buds.webm" target="_blank" rel="noopener">Alex Tr</a>, <a href="https://creativecommons.org/licenses/by/3.0/deed.es" target="_blank" rel="noopener">CC BY 3.0</a>, color modificado</p>
   </section>
 
   <!-- 5. Recuerdos flotantes -->
